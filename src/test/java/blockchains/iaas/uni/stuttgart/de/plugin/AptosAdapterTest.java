@@ -42,10 +42,12 @@ class AptosAdapterTest {
         //        outputParameter.setType("string");
         //        outputParameter.setValue("test message");
         //        outputParameters.add(outputParameter);
-        aptosAdapter.invokeSmartContract(functionId, methodName, parameters, outputParameters,0, 100000000000000000L);
 
-//        aptosAdapter.invokeSmartContract(functionId, methodName, parameters, outputParameters,0, 100000000000000000L);
-
+        List<String> typeArguments = new ArrayList<>();
+        List<String> signers = new ArrayList<>();
+        long minimumNumberOfSigners = 0;
+        aptosAdapter.invokeSmartContract(functionId, methodName, typeArguments, parameters, outputParameters, 0, signers, minimumNumberOfSigners);
+        
     }
 
     @Test

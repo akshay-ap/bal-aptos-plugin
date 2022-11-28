@@ -61,9 +61,12 @@ public class AptosAdapter implements BlockchainAdapter {
     @Override
     public CompletableFuture<Transaction> invokeSmartContract(String smartContractPath,
                                                               String functionIdentifier,
-                                                              List<Parameter> inputs, List<Parameter> outputs,
+                                                              List<String> typeArguments,
+                                                              List<Parameter> inputs,
+                                                              List<Parameter> outputs,
                                                               double requiredConfidence,
-                                                              long timeoutMillis) throws BalException {
+                                                              List<String> signers,
+                                                              long minimumNumberOfSignatures) throws BalException {
         String[] path = SmartContractPathParser.parse(smartContractPath).getSmartContractPathSegments();
         assert (path.length == 2);
 
@@ -72,9 +75,6 @@ public class AptosAdapter implements BlockchainAdapter {
         for (Parameter a : inputs) {
             arguments.add(a.getValue());
         }
-
-        ArrayList<String> typeArguments = new ArrayList<>();
-
 
         String txHash = aptosClient.sendTransaction(path[0], path[1], functionIdentifier, typeArguments.toArray(new String[0]), arguments.toArray(new String[0]));
         logger.info("Transaction hash: " + txHash);
@@ -96,5 +96,25 @@ public class AptosAdapter implements BlockchainAdapter {
     @Override
     public String testConnection() {
         return null;
+    }
+
+    @Override
+    public void signInvocation(String s, String s1) {
+
+    }
+
+    @Override
+    public List<Transaction> getPendingInvocations() {
+        return null;
+    }
+
+    @Override
+    public CompletableFuture<Transaction> tryReplaceInvocation(String s, String s1, String s2, List<String> list, List<Parameter> list1, List<Parameter> list2, double v, List<String> list3, long l) {
+        return null;
+    }
+
+    @Override
+    public void tryCancelInvocation(String s) {
+
     }
 }
