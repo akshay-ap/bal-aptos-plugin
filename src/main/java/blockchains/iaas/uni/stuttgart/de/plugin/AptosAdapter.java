@@ -8,11 +8,15 @@ import blockchains.iaas.uni.stuttgart.de.api.exceptions.NotSupportedException;
 import blockchains.iaas.uni.stuttgart.de.api.interfaces.BlockchainAdapter;
 import blockchains.iaas.uni.stuttgart.de.api.model.*;
 import blockchains.iaas.uni.stuttgart.de.api.utils.SmartContractPathParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.reactivex.Observable;
 
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
@@ -22,17 +26,21 @@ public class AptosAdapter implements BlockchainAdapter {
     private AptosClient aptosClient;
     private static Logger logger = Logger.getLogger(AptosAdapter.class.getName());
 
-    public AptosAdapter(String nodeUrl) {
+    public AptosAdapter(String nodeUrl, String keyFile) {
         this.nodeUrl = nodeUrl;
-        this.aptosClient = new AptosClient(nodeUrl, null);
+        this.aptosClient = new AptosClient(nodeUrl, keyFile);
 
-        // TODO: Read from file
-        String publicKey = "0x3a61beaa7a390f22a0f8f9b11e080f921b61295a721ab5719dbdf434d75e5126";
-        String privateKey = "0xba2563387585214194cfb2304a0ec24100a943bc4bd3280860a09bd55da2ef08";
-        String accountAddress = "0x0bc42505a3fef42173fddc558f195725bc913c3b0b02087e2d92b6163081f2ff";
-
-        Account account = new Account(accountAddress, publicKey, privateKey);
-        this.aptosClient.setAccount(account);
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            Map<String, String> example = objectMapper.readValue(new File(keyFile), Map.class);
+            String publicKey = example.get("public_key");
+            String privateKey = example.get("private_key");
+            String accountAddress = example.get("account");
+            Account account = new Account(accountAddress, publicKey, privateKey);
+            this.aptosClient.setAccount(account);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
     }
 

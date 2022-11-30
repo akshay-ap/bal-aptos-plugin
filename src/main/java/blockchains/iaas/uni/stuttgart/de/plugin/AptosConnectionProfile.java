@@ -9,6 +9,7 @@ public class AptosConnectionProfile extends AbstractConnectionProfile {
     }
 
     private String nodeUrl;
+    private String keyFile;
 
     public AptosConnectionProfile(String nodeUrl) {
         this.nodeUrl = nodeUrl;
@@ -20,5 +21,13 @@ public class AptosConnectionProfile extends AbstractConnectionProfile {
 
     public void setNodeUrl(String nodeUrl) {
         this.nodeUrl = nodeUrl;
+    }
+
+    public String getKeyFile() {
+        return keyFile;
+    }
+
+    public void setKeyFile(String keyFile) {
+        this.keyFile = keyFile;
     }
 }

@@ -13,17 +13,18 @@ class AptosAdapterTest {
 
     private AptosAdapter aptosAdapter;
     String nodeUrl = "http://localhost:8080/v1";
+    String keyFile = this.getClass().getClassLoader().getResource("local_testnet.json").getFile();
 
     @BeforeEach
     public void before() {
-        aptosAdapter = new AptosAdapter(nodeUrl);
+        aptosAdapter = new AptosAdapter(nodeUrl, keyFile);
 
     }
 
     @Test
     void testInvokeSmartContract() {
 
-        String functionId = "0bc42505a3fef42173fddc558f195725bc913c3b0b02087e2d92b6163081f2ff/message";
+        String functionId = "ab3302c28e34326897759e058124bbeebb1eeddb0a64e90430d8acc9688c0bbd/message";
         String methodName = "set_message";
 
         List<Parameter> parameters = new ArrayList<>();

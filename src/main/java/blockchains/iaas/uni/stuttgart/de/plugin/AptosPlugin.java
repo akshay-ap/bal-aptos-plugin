@@ -30,8 +30,10 @@ public class AptosPlugin extends Plugin {
             AptosConnectionProfile aptosConnectionProfile = (AptosConnectionProfile) abstractConnectionProfile;
 
             String nodeUrl = aptosConnectionProfile.getNodeUrl();
+            String keyFile = aptosConnectionProfile.getKeyFile();
+
             // int averageBlockTimeSeconds = Integer.parseInt(parameters.get("averageBlockTimeSeconds"));
-            return new AptosAdapter(nodeUrl);
+            return new AptosAdapter(nodeUrl, keyFile);
         }
 
 
