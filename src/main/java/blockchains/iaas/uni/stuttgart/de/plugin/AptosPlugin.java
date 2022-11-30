@@ -1,6 +1,7 @@
 package blockchains.iaas.uni.stuttgart.de.plugin;
 
-import blockchains.iaas.uni.stuttgart.de.api.IAdapterExtenstion;
+import blockchains.iaas.uni.stuttgart.de.api.IAdapterExtension;
+import blockchains.iaas.uni.stuttgart.de.api.connectionprofiles.AbstractConnectionProfile;
 import blockchains.iaas.uni.stuttgart.de.api.interfaces.BlockchainAdapter;
 import org.pf4j.Extension;
 import org.pf4j.Plugin;
@@ -24,13 +25,26 @@ public class AptosPlugin extends Plugin {
     }
 
     @Extension
-    public static class AptosAdapterImpl implements IAdapterExtenstion {
+    public static class AptosAdapterImpl implements IAdapterExtension {
 
         @Override
-        public BlockchainAdapter getAdapter(Map<String, String> parameters) {
-            String nodeUrl = parameters.get("nodeUrl");
-            int averageBlockTimeSeconds = Integer.parseInt(parameters.get("averageBlockTimeSeconds"));
+        public BlockchainAdapter getAdapter(AbstractConnectionProfile abstractConnectionProfile) {
+            AptosConnectionProfile ethereumConnectionProfile = (AptosConnectionProfile) abstractConnectionProfile;
+
+            String nodeUrl = ethereumConnectionProfile.getNodeUrl();
+            // int averageBlockTimeSeconds = Integer.parseInt(parameters.get("averageBlockTimeSeconds"));
             return new AptosAdapter(nodeUrl);
+        }
+
+
+        @Override
+        public Class<? extends AbstractConnectionProfile> getConnectionProfileClass() {
+            return null;
+        }
+
+        @Override
+        public String getConnectionProfileNamedType() {
+            return null;
         }
 
         @Override

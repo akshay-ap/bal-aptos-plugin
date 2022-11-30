@@ -21,7 +21,6 @@ public class AptosAdapter implements BlockchainAdapter {
     private String nodeUrl;
     private AptosClient aptosClient;
     private static Logger logger = Logger.getLogger(AptosAdapter.class.getName());
-    ;
 
     public AptosAdapter(String nodeUrl) {
         this.nodeUrl = nodeUrl;
@@ -65,6 +64,7 @@ public class AptosAdapter implements BlockchainAdapter {
                                                               List<Parameter> inputs,
                                                               List<Parameter> outputs,
                                                               double requiredConfidence,
+                                                              long timeout,
                                                               List<String> signers,
                                                               long minimumNumberOfSignatures) throws BalException {
         String[] path = SmartContractPathParser.parse(smartContractPath).getSmartContractPathSegments();
@@ -99,8 +99,9 @@ public class AptosAdapter implements BlockchainAdapter {
     }
 
     @Override
-    public void signInvocation(String s, String s1) {
+    public boolean signInvocation(String s, String s1) {
 
+        return false;
     }
 
     @Override

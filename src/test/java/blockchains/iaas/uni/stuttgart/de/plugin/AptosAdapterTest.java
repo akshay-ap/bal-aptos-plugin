@@ -46,7 +46,7 @@ class AptosAdapterTest {
         List<String> typeArguments = new ArrayList<>();
         List<String> signers = new ArrayList<>();
         long minimumNumberOfSigners = 0;
-        aptosAdapter.invokeSmartContract(functionId, methodName, typeArguments, parameters, outputParameters, 0, signers, minimumNumberOfSigners);
+        aptosAdapter.invokeSmartContract(functionId, methodName, typeArguments, parameters, outputParameters, 0, 0L, signers, minimumNumberOfSigners);
         
     }
 
