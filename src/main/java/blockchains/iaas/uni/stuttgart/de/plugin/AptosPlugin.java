@@ -39,7 +39,7 @@ public class AptosPlugin extends Plugin {
 
         @Override
         public Class<? extends AbstractConnectionProfile> getConnectionProfileClass() {
-            return null;
+            return AptosConnectionProfile.class;
         }
 
         @Override
