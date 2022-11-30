@@ -189,8 +189,8 @@ public class Transaction {
             return this;
         }
 
-        String maxGasAmount = "1500";
-        String gasPrice = "1";
+        String maxGasAmount = "150000";
+        String gasPrice = "1000";
         String expirationTimeInSeconds = "32425224034";
         String address, moduleName, functionName;
         String[] typeArguments, functionArguments;

@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
+// import java.util.HexFormat;
 
 import java.io.IOException;
 import java.security.Security;
@@ -31,8 +32,8 @@ public class AptosClient {
 
         String endpoint = this.nodeUrl + "/transactions";
         String sequenceNumber = this.account.getSequenceNumber(this.nodeUrl);
-        String maxGasAmount = "1500";
-        String gasPrice = "1";
+        String maxGasAmount = "10000";
+        String gasPrice = "100";
         String expirationTimeInSeconds = "32425224034";
 
         Transaction t = new Transaction.TransactionBuilder(account.getAccountAddress(), address, moduleName, functionName, typeArguments, functionArguments, endpoint, sequenceNumber)
@@ -86,6 +87,7 @@ public class AptosClient {
 
         data = data.substring(2);
         byte[] message = hexToByteArray(data);
+        //byte[] message = HexFormat.of().parseHex(data);
 
         Ed25519PrivateKeyParameters privateKeyParameters = new Ed25519PrivateKeyParameters(privateKeyEncoded, 0);
 
@@ -124,7 +126,7 @@ public class AptosClient {
         byte[] data = new byte[len / 2];
         for (int i = 0; i < len; i += 2) {
             data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-                    + Character.digit(s.charAt(i+1), 16));
+                    + Character.digit(s.charAt(i + 1), 16));
         }
         return data;
     }

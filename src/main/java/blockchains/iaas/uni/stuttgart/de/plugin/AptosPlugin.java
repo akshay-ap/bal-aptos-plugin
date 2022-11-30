@@ -7,8 +7,6 @@ import org.pf4j.Extension;
 import org.pf4j.Plugin;
 import org.pf4j.PluginWrapper;
 
-import java.util.Map;
-
 public class AptosPlugin extends Plugin {
     public AptosPlugin(PluginWrapper wrapper) {
         super(wrapper);

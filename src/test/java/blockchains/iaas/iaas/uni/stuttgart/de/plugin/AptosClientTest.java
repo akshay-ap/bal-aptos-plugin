@@ -19,14 +19,14 @@ class AptosClientTest {
 
         AptosClient client = new AptosClient(nodeUrl, faucetUrl);
 
-        String publicKey = "0x3a61beaa7a390f22a0f8f9b11e080f921b61295a721ab5719dbdf434d75e5126";
-        String privateKey = "0xba2563387585214194cfb2304a0ec24100a943bc4bd3280860a09bd55da2ef08";
-        String accountAddress = "0x0bc42505a3fef42173fddc558f195725bc913c3b0b02087e2d92b6163081f2ff";
+        String publicKey = "0x6c29675ff84887b60322d6ae07e78e1c209ca652a524c02b1fc258ef0a174918";
+        String privateKey = "0x509b3f4fa4bb7a525b7ded5fa0b93412c659784f597f2f553e0fb61ed17da9d5";
+        String accountAddress = "0xab3302c28e34326897759e058124bbeebb1eeddb0a64e90430d8acc9688c0bbd";
 
         Account account = new Account(accountAddress, publicKey, privateKey);
         client.setAccount(account);
 
-        String address = "0bc42505a3fef42173fddc558f195725bc913c3b0b02087e2d92b6163081f2ff";
+        String address = "ab3302c28e34326897759e058124bbeebb1eeddb0a64e90430d8acc9688c0bbd";
         String[] functionArgs = new String[]{"12345"};
         String[] typeArgs = new String[]{};
 
