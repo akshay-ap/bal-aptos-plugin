@@ -29,9 +29,9 @@ public class AptosPlugin extends Plugin {
 
         @Override
         public BlockchainAdapter getAdapter(AbstractConnectionProfile abstractConnectionProfile) {
-            AptosConnectionProfile ethereumConnectionProfile = (AptosConnectionProfile) abstractConnectionProfile;
+            AptosConnectionProfile aptosConnectionProfile = (AptosConnectionProfile) abstractConnectionProfile;
 
-            String nodeUrl = ethereumConnectionProfile.getNodeUrl();
+            String nodeUrl = aptosConnectionProfile.getNodeUrl();
             // int averageBlockTimeSeconds = Integer.parseInt(parameters.get("averageBlockTimeSeconds"));
             return new AptosAdapter(nodeUrl);
         }
@@ -49,7 +49,7 @@ public class AptosPlugin extends Plugin {
 
         @Override
         public String getBlockChainId() {
-            return "ethereum";
+            return "aptos";
         }
 
     }
