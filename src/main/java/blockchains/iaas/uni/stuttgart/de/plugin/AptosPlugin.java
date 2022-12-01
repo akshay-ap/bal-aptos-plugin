@@ -44,7 +44,7 @@ public class AptosPlugin extends Plugin {
 
         @Override
         public String getConnectionProfileNamedType() {
-            return null;
+            return "aptos";
         }
 
         @Override
