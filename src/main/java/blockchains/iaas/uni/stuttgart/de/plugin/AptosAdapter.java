@@ -10,6 +10,14 @@ import blockchains.iaas.uni.stuttgart.de.api.model.*;
 import blockchains.iaas.uni.stuttgart.de.api.utils.SmartContractPathParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.reactivex.Observable;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHeaders;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -115,7 +123,48 @@ public class AptosAdapter implements BlockchainAdapter {
 
     @Override
     public String testConnection() {
-        return null;
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        String result = null;
+        try {
+
+            HttpGet request = new HttpGet(nodeUrl + "/-/healthy");
+
+            // add request headers
+            request.addHeader("custom-key", "mkyong");
+            request.addHeader(HttpHeaders.USER_AGENT, "Googlebot");
+
+            CloseableHttpResponse response = httpClient.execute(request);
+
+            try {
+
+                // Get HttpResponse Status
+                System.out.println(response.getProtocolVersion());              // HTTP/1.1
+                System.out.println(response.getStatusLine().getStatusCode());   // 200
+                System.out.println(response.getStatusLine().getReasonPhrase()); // OK
+                System.out.println(response.getStatusLine().toString());        // HTTP/1.1 200 OK
+
+                HttpEntity entity = response.getEntity();
+                if (entity != null) {
+                    // return it as a String
+                    result = EntityUtils.toString(entity);
+                    logger.info("Test connection: " + result);
+                }
+
+            } finally {
+                response.close();
+            }
+        } catch (ClientProtocolException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                httpClient.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return result;
     }
 
     @Override
