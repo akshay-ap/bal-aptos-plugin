@@ -22,9 +22,13 @@ import org.apache.http.util.EntityUtils;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.logging.Logger;
@@ -118,7 +122,38 @@ public class AptosAdapter implements BlockchainAdapter {
     @Override
     public CompletableFuture<QueryResult> queryEvents(String smartContractAddress, String eventIdentifier,
                                                       List<Parameter> outputParameters, String filter, TimeFrame timeFrame) throws BalException {
-        return null;
+        List<HashMap> invocationResult = this.aptosClient.queryEventInvocations(smartContractAddress, eventIdentifier, timeFrame.getFrom(), timeFrame.getTo());
+
+        QueryResult result = new QueryResult();
+        List<Occurrence> occurrences = new ArrayList<>();
+
+        for (HashMap i : invocationResult) {
+            Long timeinMillis = Long.valueOf((String) i.get("timestamp"));
+            ZonedDateTime zdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(timeinMillis),
+                    ZoneId.systemDefault());
+            System.out.println(zdt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+            Occurrence o = new Occurrence();
+            o.setIsoTimestamp(zdt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+            List<Parameter> parameters = new ArrayList<>();
+            HashMap<String, Object> events = (HashMap<String, Object>) ((ArrayList) i.get("events")).get(0);
+
+            HashMap<String, Object> data = (HashMap<String, Object>) events.get("data");
+            for (Map.Entry<String, Object> set :
+                    data.entrySet()) {
+
+                // Printing all elements of a Map
+                System.out.println(set.getKey() + " = "
+                        + set.getValue());
+                Parameter p = new Parameter(set.getKey(), "string", set.getValue().toString());
+                parameters.add(p);
+            }
+            o.setParameters(parameters);
+            occurrences.add(o);
+
+        }
+
+        result.setOccurrences(occurrences);
+        return CompletableFuture.completedFuture(result);
     }
 
     @Override

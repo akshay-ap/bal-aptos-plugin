@@ -3,19 +3,20 @@ package blockchains.iaas.iaas.uni.stuttgart.de.plugin;
 import aptos.Account;
 import aptos.AptosClient;
 import aptos.Event;
-import okhttp3.Response;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class AptosClientTest {
+    String nodeUrl = "http://localhost:8080/v1";
+    String faucetUrl = "http://localhost:8000";
 
     @Test
     void testSendTransaction() {
-        String nodeUrl = "http://localhost:8080/v1";
-        String faucetUrl = "http://localhost:8000";
+
 
         AptosClient client = new AptosClient(nodeUrl, faucetUrl);
 
@@ -37,16 +38,14 @@ class AptosClientTest {
 
     @Test
     void testEventQuery() {
+        AptosClient client = new AptosClient(nodeUrl, faucetUrl);
 
         Event e = new Event();
-        String address = "";
+        String address = "0xd95447d2ad52363a34423490b8d70ec8312da735f8dedc1a763c79f4599dc5dc";
         String eventHandle = "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>";
         String fieldName = "withdraw_events";
-        try {
-            Response r = e.queryEvent(address, eventHandle, fieldName);
-                
-        } catch (IOException exception) {
-            exception.printStackTrace();
-        }
+        List<HashMap> r = client.queryEventInvocations(address, eventHandle, "0", "1669916205398352");
+        assert r.size() != 0;
     }
+
 }

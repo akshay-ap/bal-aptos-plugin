@@ -1,9 +1,10 @@
 package aptos;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpHeaders;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -18,8 +19,11 @@ import org.bouncycastle.util.encoders.Hex;
 // import java.util.HexFormat;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.Security;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class AptosClient {
@@ -151,5 +155,88 @@ public class AptosClient {
                     + Character.digit(s.charAt(i + 1), 16));
         }
         return data;
+    }
+
+    public void queryFunctionInvocations(String accountAddress, String functionIdentifier, long start, long end) {
+
+    }
+
+    public List<HashMap> queryEventInvocations(String accountAddress, String eventIdentifier, String start, String end) {
+        BigInteger endTime = new BigInteger(end);
+        BigInteger startTime = new BigInteger(start);
+
+        ArrayList<HashMap> results = new ArrayList<>();
+        String url = this.nodeUrl + "/accounts/" + accountAddress + "/transactions";
+        int limit = 100;
+        int start_count = 0;
+        boolean breakLoop = false;
+        try {
+            while (true) {
+                String endpoint = url + "?limit=" + limit + "&start=" + start_count;
+                String result = sendGetRequest(endpoint);
+                ObjectMapper objectMapper = new ObjectMapper();
+
+                HashMap[] response_entity = objectMapper.readValue(result, HashMap[].class);
+
+                for (HashMap r : response_entity) {
+                    BigInteger timeStamp = new BigInteger(r.get("timestamp").toString());
+
+                    if (startTime.compareTo(timeStamp) > 0) {
+                        continue;
+                    }
+
+                    if (endTime.compareTo(timeStamp) < 0) {
+                        breakLoop = true;
+                        break;
+                    }
+                    results.add(r);
+                }
+                start_count = start_count + limit;
+                if (breakLoop || response_entity.length < limit) {
+                    break;
+                }
+            }
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        return results;
+
+    }
+
+    private String sendGetRequest(String url) {
+        String result;
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        try {
+
+            HttpGet request = new HttpGet(url);
+            CloseableHttpResponse response = httpClient.execute(request);
+
+            try {
+
+                // Get HttpResponse Status
+                System.out.println(response.getStatusLine().getStatusCode());   // 200
+                System.out.println(response.getStatusLine().getReasonPhrase()); // OK
+                assert response.getStatusLine().getStatusCode() == 200;
+                HttpEntity entity = response.getEntity();
+                if (entity != null) {
+                    result = EntityUtils.toString(entity);
+                    return result;
+                }
+
+            } finally {
+                response.close();
+            }
+        } catch (ClientProtocolException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                httpClient.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return null;
     }
 }

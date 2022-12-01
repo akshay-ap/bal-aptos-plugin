@@ -1,11 +1,14 @@
 package blockchains.iaas.uni.stuttgart.de.plugin;
 
 import blockchains.iaas.uni.stuttgart.de.api.model.Parameter;
+import blockchains.iaas.uni.stuttgart.de.api.model.QueryResult;
+import blockchains.iaas.uni.stuttgart.de.api.model.TimeFrame;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -48,7 +51,7 @@ class AptosAdapterTest {
         List<String> signers = new ArrayList<>();
         long minimumNumberOfSigners = 0;
         aptosAdapter.invokeSmartContract(functionId, methodName, typeArguments, parameters, outputParameters, 0, 0L, signers, minimumNumberOfSigners);
-        
+
     }
 
     @Test
@@ -57,6 +60,14 @@ class AptosAdapterTest {
 
     @Test
     void queryEvents() {
+        String address = "0xd95447d2ad52363a34423490b8d70ec8312da735f8dedc1a763c79f4599dc5dc";
+        String eventHandle = "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>";
+        String fieldName = "withdraw_events";
+        List<Parameter> outputParameters = new ArrayList<>();
+        TimeFrame timeFrame = new TimeFrame("0", "1669916205398352");
+        String filter = "";
+        CompletableFuture<QueryResult> result = aptosAdapter.queryEvents(address, eventHandle, outputParameters, "", timeFrame);
+        assert result.isDone();
     }
 
     @Test
