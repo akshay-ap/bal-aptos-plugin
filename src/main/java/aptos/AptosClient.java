@@ -2,6 +2,15 @@ package aptos;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHeaders;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -52,12 +61,12 @@ public class AptosClient {
 
         String signedBodyContent = t.getSignedTransactionAsJsonString();
         try {
-            Response response = post(endpoint, signedBodyContent);
-            assert response.isSuccessful();
+            String response = post(endpoint, signedBodyContent);
+            // assert response.isSuccessful();
             ObjectMapper objectMapper = new ObjectMapper();
-            ResponseBody responseBody = response.body();
-            assert responseBody != null;
-            Map<String, Object> entity = objectMapper.readValue(responseBody.string(), HashMap.class);
+            // ResponseBody responseBody = response.body();
+            // assert responseBody != null;
+            Map<String, Object> entity = objectMapper.readValue(response, HashMap.class);
             return (String) entity.get("hash");
         } catch (IOException e) {
             e.printStackTrace();
@@ -66,17 +75,30 @@ public class AptosClient {
     }
 
 
-    private Response post(String url, String json) throws IOException {
-        OkHttpClient client = new OkHttpClient();
-        MediaType JSON = MediaType.get("application/json");
+    private String post(String url, String json) throws IOException {
+//        OkHttpClient client = new OkHttpClient();
+//        okhttp3.MediaType JSON = okhttp3.MediaType.get("application/json");
+//
+//        RequestBody body = RequestBody.create(json, null);
+//        Request request = new Request.Builder()
+//                .addHeader("Content-type", "application/json")
+//                .url(url)
+//                .post(body)
+//                .build();
+//        return client.newCall(request).execute();
+        String result = "";
+        HttpPost post = new HttpPost(url);
+        post.addHeader("content-type", "application/json");
 
-        RequestBody body = RequestBody.create(json, null);
-        Request request = new Request.Builder()
-                .addHeader("Content-type", "application/json")
-                .url(url)
-                .post(body)
-                .build();
-        return client.newCall(request).execute();
+        // send a JSON data
+        post.setEntity(new StringEntity(json.toString()));
+
+        try (CloseableHttpClient httpClient = HttpClients.createDefault();
+             CloseableHttpResponse response = httpClient.execute(post)) {
+            result = EntityUtils.toString(response.getEntity());
+        }
+
+        return result;
     }
 
     public String signMessage(String data, String privateKey) {
@@ -102,9 +124,9 @@ public class AptosClient {
         try {
             String endpoint = this.nodeUrl + "/transactions/encode_submission";
 
-            OkHttpClient client = new OkHttpClient().newBuilder()
+            okhttp3.OkHttpClient client = new okhttp3.OkHttpClient().newBuilder()
                     .build();
-            MediaType mediaType = MediaType.parse("application/json");
+            okhttp3.MediaType mediaType = okhttp3.MediaType.parse("application/json");
             RequestBody body = RequestBody.create(mediaType, data);
             Request request = new Request.Builder()
                     .url(endpoint)
