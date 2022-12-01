@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.logging.Logger;
 
 public class AptosAdapter implements BlockchainAdapter {
@@ -84,9 +85,20 @@ public class AptosAdapter implements BlockchainAdapter {
             arguments.add(a.getValue());
         }
 
-        String txHash = aptosClient.sendTransaction(path[0], path[1], functionIdentifier, typeArguments.toArray(new String[0]), arguments.toArray(new String[0]));
-        logger.info("Transaction hash: " + txHash);
-        return null;
+        return CompletableFuture.supplyAsync(() -> {
+            String txHash = aptosClient.sendTransaction(path[0], path[1], functionIdentifier, typeArguments.toArray(new String[0]), arguments.toArray(new String[0]));
+            logger.info("Transaction hash: " + txHash);
+            return CompletableFuture.completedFuture(txHash);
+        }).thenApply((txhash) -> {
+            Transaction tx = new Transaction();
+            tx.setState(TransactionState.CONFIRMED);
+            tx.setReturnValues(new ArrayList<>());
+            return tx;
+        }).exceptionally(e -> {
+            logger.info("Invocation failed with exception : " + e.getMessage());
+            throw new CompletionException(e);
+        });
+        // tx.complete();
     }
 
     @Override
