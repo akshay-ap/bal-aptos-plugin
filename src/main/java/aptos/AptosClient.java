@@ -1,5 +1,6 @@
 package aptos;
 
+import blockchains.iaas.uni.stuttgart.de.plugin.AptosAdapter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
@@ -16,6 +17,8 @@ import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 // import java.util.HexFormat;
 
 import java.io.IOException;
@@ -32,6 +35,8 @@ public class AptosClient {
     private final String nodeUrl;
     private String faucetUrl;
     private Account account;
+
+    private static final Logger logger = LoggerFactory.getLogger(AptosClient.class.getName());
 
     public AptosClient(String nodeUrl, String faucetUrl) {
         this.nodeUrl = nodeUrl;
@@ -106,6 +111,7 @@ public class AptosClient {
         try {
             CloseableHttpClient httpClient = HttpClients.createDefault();
             CloseableHttpResponse response = httpClient.execute(post);
+            logger.debug("POST API [{}] response code [{}]", url, response.getStatusLine().getStatusCode());
             result = EntityUtils.toString(response.getEntity());
             if (response.getStatusLine().getStatusCode() != 202) {
                 throw new Exception(result);

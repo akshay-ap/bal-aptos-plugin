@@ -26,7 +26,7 @@ class AptosAdapterTest {
     @Test
     void testInvokeSmartContract() throws ExecutionException, InterruptedException {
 
-        String functionId = "3570b4f94dc613de78c443a1abd3d001f05b2f6a297892c07c9ba51151a4604a/message";
+        String functionId = "9f709239a4caf988527df46b7dca3797b740e408e48aa713e79a87fe85a53c4d/message";
         String methodName = "set_message";
 
         List<Parameter> parameters = new ArrayList<>();
@@ -51,8 +51,7 @@ class AptosAdapterTest {
         long minimumNumberOfSigners = 0;
         Transaction result =
                 aptosAdapter.invokeSmartContract(functionId, methodName, typeArguments, parameters, outputParameters, 0, 0L, signers, minimumNumberOfSigners).get();
-        String value = result.getReturnValues().get(0).getValue();
-        System.out.println(value + " " + result.getState());
+        assert result.getState() == TransactionState.CONFIRMED;
     }
 
     @Test
@@ -61,10 +60,10 @@ class AptosAdapterTest {
 
     @Test
     void queryEvents() {
-        String address = "0xd95447d2ad52363a34423490b8d70ec8312da735f8dedc1a763c79f4599dc5dc";
+        String address = "0x050467afdd25629e640c2445c2eef7b6d909c741dadd1e73487c9acf32bc016e";
         String eventHandle = "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>";
         List<Parameter> outputParameters = new ArrayList<>();
-        TimeFrame timeFrame = new TimeFrame("0", "1669916205398352");
+        TimeFrame timeFrame = new TimeFrame("0", String.valueOf(System.currentTimeMillis() * 1000));
         String filter = "";
         CompletableFuture<QueryResult> result = aptosAdapter.queryEvents(address, eventHandle, outputParameters, "", timeFrame);
         assert result.isDone();
@@ -72,5 +71,9 @@ class AptosAdapterTest {
 
     @Test
     void testConnection() {
+
+        String result = aptosAdapter.testConnection();
+        assertNotNull(result);
+        assertEquals("{\"message\":\"aptos-node:ok\"}", result);
     }
 }

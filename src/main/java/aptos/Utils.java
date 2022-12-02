@@ -7,10 +7,14 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 public class Utils {
+    private static final Logger logger = LoggerFactory.getLogger(Utils.class.getName());
+
     public static String sendGetRequest(String url) {
         String result;
         CloseableHttpClient httpClient = HttpClients.createDefault();
@@ -22,8 +26,7 @@ public class Utils {
             try {
 
                 // Get HttpResponse Status
-                System.out.println(response.getStatusLine().getStatusCode());   // 200
-                System.out.println(response.getStatusLine().getReasonPhrase()); // OK
+                logger.debug("GET API [{}] response code [{}]", url, response.getStatusLine().getStatusCode());   // 200
                 assert response.getStatusLine().getStatusCode() == 200;
                 HttpEntity entity = response.getEntity();
                 if (entity != null) {
