@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.security.PrivateKey;
 import java.util.HashMap;
 
+import static aptos.Utils.sendGetRequest;
+
 public class Account {
     private String publicKey;
     private String privateKey;
@@ -26,19 +28,10 @@ public class Account {
         String endpoint = nodeUrl + "/accounts/" + this.accountAddress;
 
         try {
-            OkHttpClient client = new OkHttpClient().newBuilder()
-                    .build();
-            MediaType mediaType = MediaType.parse("text/plain");
-            Request request = new Request.Builder()
-                    .url(endpoint)
-                    .method("GET", null)
-                    .build();
-            //  Response response = client.newCall(request).execute();
+            String result = sendGetRequest(endpoint);
 
             ObjectMapper objectMapper = new ObjectMapper();
-            ResponseBody responseBody = client.newCall(request).execute().body();
-            assert responseBody != null;
-            HashMap entity = objectMapper.readValue(responseBody.string(), HashMap.class);
+            HashMap entity = objectMapper.readValue(result, HashMap.class);
             return (String) entity.get("sequence_number");
         } catch (IOException e) {
             e.printStackTrace();

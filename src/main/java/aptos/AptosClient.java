@@ -26,6 +26,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static aptos.Utils.sendGetRequest;
+
 public class AptosClient {
     private final String nodeUrl;
     private String faucetUrl;
@@ -36,15 +38,17 @@ public class AptosClient {
         this.faucetUrl = faucetUrl;
     }
 
+    public String getSequenceNumber() {
+        return account.getSequenceNumber(this.nodeUrl);
+    }
 
     public void setAccount(Account account) {
         this.account = account;
     }
 
-    public String sendTransaction(String address, String moduleName, String functionName, String[] typeArguments, String[] functionArguments) {
+    public String sendTransaction(String address, String moduleName, String functionName, String[] typeArguments, String[] functionArguments, String sequenceNumber) throws Exception {
 
         String endpoint = this.nodeUrl + "/transactions";
-        String sequenceNumber = this.account.getSequenceNumber(this.nodeUrl);
         String maxGasAmount = "10000";
         String gasPrice = "100";
         String expirationTimeInSeconds = "32425224034";
@@ -74,12 +78,14 @@ public class AptosClient {
             return (String) entity.get("hash");
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
         return null;
     }
 
 
-    private String post(String url, String json) throws IOException {
+    private String post(String url, String json) throws Exception {
 //        OkHttpClient client = new OkHttpClient();
 //        okhttp3.MediaType JSON = okhttp3.MediaType.get("application/json");
 //
@@ -97,12 +103,19 @@ public class AptosClient {
         // send a JSON data
         post.setEntity(new StringEntity(json.toString()));
 
-        try (CloseableHttpClient httpClient = HttpClients.createDefault();
-             CloseableHttpResponse response = httpClient.execute(post)) {
+        try {
+            CloseableHttpClient httpClient = HttpClients.createDefault();
+            CloseableHttpResponse response = httpClient.execute(post);
             result = EntityUtils.toString(response.getEntity());
+            if (response.getStatusLine().getStatusCode() != 202) {
+                throw new Exception(result);
+            }
+            return result;
+
+        } catch (Exception e) {
+            throw new Exception(e.getMessage());
         }
 
-        return result;
     }
 
     public String signMessage(String data, String privateKey) {
@@ -124,7 +137,7 @@ public class AptosClient {
         return "0x".concat(Hex.toHexString(signature));
     }
 
-    public String encodeData(String data) {
+    public String encodeData(String data) throws Exception {
         try {
             String endpoint = this.nodeUrl + "/transactions/encode_submission";
 
@@ -138,7 +151,9 @@ public class AptosClient {
                     .addHeader("Content-Type", "application/json")
                     .build();
             Response response = client.newCall(request).execute();
-            assert response.code() == 200 && response.body() != null;
+            if (response.code() != 200) {
+                throw new Exception(response.body().string());
+            }
             String encodedData = response.body().string();
             return encodedData.replace("\"", "");
         } catch (IOException e) {
@@ -203,40 +218,5 @@ public class AptosClient {
 
     }
 
-    private String sendGetRequest(String url) {
-        String result;
-        CloseableHttpClient httpClient = HttpClients.createDefault();
-        try {
 
-            HttpGet request = new HttpGet(url);
-            CloseableHttpResponse response = httpClient.execute(request);
-
-            try {
-
-                // Get HttpResponse Status
-                System.out.println(response.getStatusLine().getStatusCode());   // 200
-                System.out.println(response.getStatusLine().getReasonPhrase()); // OK
-                assert response.getStatusLine().getStatusCode() == 200;
-                HttpEntity entity = response.getEntity();
-                if (entity != null) {
-                    result = EntityUtils.toString(entity);
-                    return result;
-                }
-
-            } finally {
-                response.close();
-            }
-        } catch (ClientProtocolException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                httpClient.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return null;
-    }
 }

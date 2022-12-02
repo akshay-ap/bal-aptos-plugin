@@ -2,9 +2,7 @@ package blockchains.iaas.uni.stuttgart.de.plugin;
 
 import aptos.Account;
 import aptos.AptosClient;
-import blockchains.iaas.uni.stuttgart.de.api.exceptions.BalException;
-import blockchains.iaas.uni.stuttgart.de.api.exceptions.InvalidTransactionException;
-import blockchains.iaas.uni.stuttgart.de.api.exceptions.NotSupportedException;
+import blockchains.iaas.uni.stuttgart.de.api.exceptions.*;
 import blockchains.iaas.uni.stuttgart.de.api.interfaces.BlockchainAdapter;
 import blockchains.iaas.uni.stuttgart.de.api.model.*;
 import blockchains.iaas.uni.stuttgart.de.api.utils.SmartContractPathParser;
@@ -18,7 +16,10 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.naming.OperationNotSupportedException;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -31,13 +32,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.logging.Logger;
 
 public class AptosAdapter implements BlockchainAdapter {
 
     private String nodeUrl;
     private AptosClient aptosClient;
-    private static Logger logger = Logger.getLogger(AptosAdapter.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(AptosAdapter.class.getName());
 
     public AptosAdapter(String nodeUrl, String keyFile) {
         this.nodeUrl = nodeUrl;
@@ -98,9 +98,14 @@ public class AptosAdapter implements BlockchainAdapter {
         }
 
         return CompletableFuture.supplyAsync(() -> {
-            String txHash = aptosClient.sendTransaction(path[0], path[1], functionIdentifier, typeArguments.toArray(new String[0]), arguments.toArray(new String[0]));
-            logger.info("Transaction hash: " + txHash);
-            return CompletableFuture.completedFuture(txHash);
+            try {
+                String seq = aptosClient.getSequenceNumber();
+                String txHash = aptosClient.sendTransaction(path[0], path[1], functionIdentifier, typeArguments.toArray(new String[0]), arguments.toArray(new String[0]), seq);
+                logger.info("Transaction hash: " + txHash);
+                return CompletableFuture.completedFuture(txHash);
+            } catch (Exception e) {
+                throw new CompletionException(wrapAtposExceptions(e));
+            }
         }).thenApply((txhash) -> {
             Transaction tx = new Transaction();
             tx.setState(TransactionState.CONFIRMED);
@@ -108,15 +113,38 @@ public class AptosAdapter implements BlockchainAdapter {
             return tx;
         }).exceptionally(e -> {
             logger.info("Invocation failed with exception : " + e.getMessage());
-            throw new CompletionException(e);
+            throw wrapAtposExceptions(e);
         });
         // tx.complete();
+    }
+
+    private static CompletionException wrapAtposExceptions(Throwable e) {
+        return new CompletionException(mapAptosException(e));
     }
 
     @Override
     public Observable<Occurrence> subscribeToEvent(String smartContractAddress, String eventIdentifier,
                                                    List<Parameter> outputParameters, double degreeOfConfidence, String filter) throws BalException {
-        return null;
+        Observable<Occurrence> o = Observable.create(emitter -> {
+            while (!emitter.isDisposed()) {
+                Occurrence occurrence = new Occurrence();
+                ZonedDateTime zdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(System.currentTimeMillis()),
+                        ZoneId.systemDefault());
+
+                occurrence.setIsoTimestamp(zdt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+
+                List<Parameter> parameters = new ArrayList<>();
+                Parameter p = new Parameter();
+                p.setName("Dummy");
+                p.setValue("DummyValue");
+                p.setType("DummyType");
+                parameters.add(p);
+                occurrence.setParameters(parameters);
+                emitter.onNext(occurrence);
+
+            }
+        });
+        return o;
     }
 
     @Override
@@ -221,5 +249,26 @@ public class AptosAdapter implements BlockchainAdapter {
     @Override
     public void tryCancelInvocation(String s) {
 
+    }
+
+    private static BalException mapAptosException(Throwable e) {
+        BalException result;
+
+        if (e instanceof BalException)
+            result = (BalException) e;
+        else if (e.getCause() instanceof BalException)
+            result = (BalException) e.getCause();
+        else if (e.getCause() instanceof IOException)
+            result = new BlockchainNodeUnreachableException(e.getMessage());
+        else if (e instanceof IllegalArgumentException || e instanceof OperationNotSupportedException)
+            result = new InvokeSmartContractFunctionFailure(e.getMessage());
+        else if (e.getCause() instanceof RuntimeException)
+            result = new InvalidTransactionException(e.getMessage());
+        else {
+            logger.error("Unexpected exception was thrown!");
+            result = new InvalidTransactionException(e.getMessage());
+        }
+
+        return result;
     }
 }
