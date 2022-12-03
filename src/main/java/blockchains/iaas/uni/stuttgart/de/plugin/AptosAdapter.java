@@ -126,21 +126,19 @@ public class AptosAdapter implements BlockchainAdapter {
     public Observable<Occurrence> subscribeToEvent(String smartContractAddress, String eventIdentifier,
                                                    List<Parameter> outputParameters, double degreeOfConfidence, String filter) throws BalException {
         return Observable.interval(0, 10, TimeUnit.SECONDS).map((t) -> {
-            Occurrence occurrence = new Occurrence();
-            ZonedDateTime zdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(System.currentTimeMillis()),
-                    ZoneId.systemDefault());
+            String key = smartContractAddress + "::" + eventIdentifier;
+            String start = aptosClient.getEventSubscriptionMappingValue(key);
+            String[] path = SmartContractPathParser.parse(smartContractAddress).getSmartContractPathSegments();
+            assert (path.length == 2);
+            long end = Long.parseLong(aptosClient.getLedgerVersion());
+            List<HashMap> result = aptosClient.queryUserEventInvocationsByBlock(path[0], path[1], eventIdentifier,
+                    Long.parseLong(start), end);
+            aptosClient.setEventSubscriptionMappingValue(key, String.valueOf(end));
 
-            occurrence.setIsoTimestamp(zdt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+            List<Occurrence> occurrences = transformInvocationResultToOccurrences(result);
+            return occurrences;
+        }).flatMapIterable(x -> x);
 
-            List<Parameter> parameters = new ArrayList<>();
-            Parameter p = new Parameter();
-            p.setName("Dummy");
-            p.setValue("DummyValue");
-            p.setType("DummyType");
-            parameters.add(p);
-            occurrence.setParameters(parameters);
-            return occurrence;
-        });
     }
 
     @Override
@@ -153,39 +151,7 @@ public class AptosAdapter implements BlockchainAdapter {
         List<HashMap> invocationResult = this.aptosClient.queryUserEventInvocations(path[0], path[1], eventIdentifier, timeFrame.getFrom(), timeFrame.getTo());
 
         QueryResult result = new QueryResult();
-        List<Occurrence> occurrences = new ArrayList<>();
-
-        for (HashMap i : invocationResult) {
-            Long timeinMillis = Long.valueOf((String) i.get("timestamp"));
-            ZonedDateTime zdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(timeinMillis),
-                    ZoneId.systemDefault());
-            System.out.println(zdt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-            Occurrence o = new Occurrence();
-            o.setIsoTimestamp(zdt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-            List<Parameter> parameters = new ArrayList<>();
-            try {
-                // ArrayList e = ((ArrayList) i.get("events"));
-                // if (e.size() == 0) continue;
-                // HashMap<String, Object> events = (HashMap<String, Object>) ((ArrayList) i.get("events")).get(0);
-
-                HashMap<String, Object> data = (HashMap<String, Object>) i.get("data");
-                for (Map.Entry<String, Object> set :
-                        data.entrySet()) {
-
-                    // Printing all elements of a Map
-                    System.out.println(set.getKey() + " = "
-                            + set.getValue());
-                    Parameter p = new Parameter(set.getKey(), "string", set.getValue().toString());
-                    parameters.add(p);
-                }
-                o.setParameters(parameters);
-                occurrences.add(o);
-            } catch (IndexOutOfBoundsException e) {
-                logger.error("Skipping events n tx: " + i.get("hash"), e);
-            }
-
-
-        }
+        List<Occurrence> occurrences = transformInvocationResultToOccurrences(invocationResult);
 
         result.setOccurrences(occurrences);
         return CompletableFuture.completedFuture(result);
@@ -206,12 +172,9 @@ public class AptosAdapter implements BlockchainAdapter {
             CloseableHttpResponse response = httpClient.execute(request);
 
             try {
-
                 // Get HttpResponse Status
-                System.out.println(response.getProtocolVersion());              // HTTP/1.1
                 System.out.println(response.getStatusLine().getStatusCode());   // 200
                 System.out.println(response.getStatusLine().getReasonPhrase()); // OK
-                System.out.println(response.getStatusLine().toString());        // HTTP/1.1 200 OK
 
                 HttpEntity entity = response.getEntity();
                 if (entity != null) {
@@ -277,5 +240,31 @@ public class AptosAdapter implements BlockchainAdapter {
         }
 
         return result;
+    }
+
+    private List<Occurrence> transformInvocationResultToOccurrences(List<HashMap> invocationResult) {
+        List<Occurrence> occurrences = new ArrayList<>();
+        for (HashMap i : invocationResult) {
+            Long timeinMillis = Long.valueOf((String) i.get("timestamp"));
+            ZonedDateTime zdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(timeinMillis),
+                    ZoneId.systemDefault());
+            System.out.println(zdt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+            Occurrence o = new Occurrence();
+            o.setIsoTimestamp(zdt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+            List<Parameter> parameters = new ArrayList<>();
+            try {
+                HashMap<String, Object> data = (HashMap<String, Object>) i.get("data");
+                for (Map.Entry<String, Object> set :
+                        data.entrySet()) {
+                    Parameter p = new Parameter(set.getKey(), "string", set.getValue().toString());
+                    parameters.add(p);
+                }
+                o.setParameters(parameters);
+                occurrences.add(o);
+            } catch (IndexOutOfBoundsException e) {
+                logger.error("Skipping events n tx: " + i.get("hash"), e);
+            }
+        }
+        return occurrences;
     }
 }

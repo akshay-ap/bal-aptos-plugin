@@ -56,9 +56,18 @@ class AptosAdapterTest {
 
     @Test
     void testSubscribeToEvent() throws InterruptedException {
-        aptosAdapter.subscribeToEvent("", null, null, 1, "").subscribe(o -> {
-            System.out.println(o.getIsoTimestamp());
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                aptosAdapter.subscribeToEvent("0x3/token", "CreateCollectionEvent", null, 1, "").subscribe(o -> {
+                    System.out.println(o.getIsoTimestamp());
+                });
+            }
         });
+
+        t.start();
+
+        Thread.sleep(30000);
 
     }
 

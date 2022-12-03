@@ -1,6 +1,8 @@
 package aptos;
 
+import aptos.models.LedgerInfo;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -32,6 +34,7 @@ public class AptosClient {
     private String faucetUrl;
     private Account account;
 
+    private HashMap<String, String> eventSubscriptionMapping = new HashMap();
     private static final Logger logger = LoggerFactory.getLogger(AptosClient.class.getName());
 
     public AptosClient(String nodeUrl, String faucetUrl) {
@@ -311,7 +314,10 @@ public class AptosClient {
 
                     HashMap<String, Object> data = (HashMap<String, Object>) events.get("data");
                     if (events.get("type").equals(type)) {
-                        results.add(data);
+                        HashMap<String, Object> h = new HashMap<>();
+                        h.put("data", data);
+                        h.put("timestamp", r.get("timestamp"));
+                        results.add(h);
                     }
                 }
                 count = count + limit;
@@ -326,4 +332,27 @@ public class AptosClient {
         return results;
     }
 
+    public String getEventSubscriptionMappingValue(String key) {
+        if (!eventSubscriptionMapping.containsKey(key)) {
+            eventSubscriptionMapping.put(key, this.getLedgerVersion());
+
+        }
+        return eventSubscriptionMapping.get(key);
+    }
+
+    public void setEventSubscriptionMappingValue(String key, String value) {
+        this.eventSubscriptionMapping.put(key, value);
+    }
+
+    public String getLedgerVersion() {
+        String result = Utils.sendGetRequest(this.nodeUrl);
+        ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        LedgerInfo ledgerInfo = null;
+        try {
+            ledgerInfo = mapper.readValue(result, LedgerInfo.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        return ledgerInfo.ledgerVersion;
+    }
 }

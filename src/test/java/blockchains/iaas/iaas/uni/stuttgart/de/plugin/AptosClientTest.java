@@ -3,6 +3,7 @@ package blockchains.iaas.iaas.uni.stuttgart.de.plugin;
 import aptos.Account;
 import aptos.AptosClient;
 import aptos.Event;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
@@ -77,4 +78,18 @@ class AptosClientTest {
         assert r.size() != 0;
     }
 
+    @Test
+    void getLedgerVersion() throws JsonProcessingException {
+        AptosClient client = new AptosClient(nodeUrl, faucetUrl);
+        String v = client.getLedgerVersion();
+        assertNotNull(v);
+    }
+
+    @Test
+    void testQueryEventInvocationByBlock() {
+        AptosClient client = new AptosClient(nodeUrl, faucetUrl);
+
+        List<HashMap> r = client.queryUserEventInvocationsByBlock("0x3", "token", "CreateCollectionEvent", 0, 2000);
+        assert r.size() != 0;
+    }
 }
