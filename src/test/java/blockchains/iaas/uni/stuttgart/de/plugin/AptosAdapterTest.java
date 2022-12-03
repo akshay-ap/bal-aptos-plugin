@@ -63,9 +63,21 @@ class AptosAdapterTest {
     }
 
     @Test
-    void queryEvents() {
-        String address = "0x050467afdd25629e640c2445c2eef7b6d909c741dadd1e73487c9acf32bc016e";
-        String eventHandle = "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>";
+    void queryEvents() throws ExecutionException, InterruptedException {
+        String address = "0x3/token";
+        String eventHandle = "CreateCollectionEvent";
+        List<Parameter> outputParameters = new ArrayList<>();
+        TimeFrame timeFrame = new TimeFrame("0", String.valueOf(System.currentTimeMillis() * 1000));
+        String filter = "";
+        CompletableFuture<QueryResult> result = aptosAdapter.queryEvents(address, eventHandle, outputParameters, "", timeFrame);
+        assert result.isDone();
+        assert result.get().getOccurrences().size() != 0;
+    }
+
+    @Test
+    void queryEvents2() {
+        String address = "0x1/coin";
+        String eventHandle = "CoinStore<0x1::aptos_coin::AptosCoin>";
         List<Parameter> outputParameters = new ArrayList<>();
         TimeFrame timeFrame = new TimeFrame("0", String.valueOf(System.currentTimeMillis() * 1000));
         String filter = "";
@@ -74,15 +86,16 @@ class AptosAdapterTest {
     }
 
     @Test
-    void queryEvents2() {
-        String address = "0x9f709239a4caf988527df46b7dca3797b740e408e48aa713e79a87fe85a53c4d";
-        String eventHandle = "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>";
+    void queryEvents3() {
+        String address = "0x3/token";
+        String eventHandle = "CreateTokenDataEvent";
         List<Parameter> outputParameters = new ArrayList<>();
         TimeFrame timeFrame = new TimeFrame("0", String.valueOf(System.currentTimeMillis() * 1000));
         String filter = "";
         CompletableFuture<QueryResult> result = aptosAdapter.queryEvents(address, eventHandle, outputParameters, "", timeFrame);
         assert result.isDone();
     }
+
 
     @Test
     void testConnection() {

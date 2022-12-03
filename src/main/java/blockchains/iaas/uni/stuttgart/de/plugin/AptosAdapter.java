@@ -8,9 +8,6 @@ import blockchains.iaas.uni.stuttgart.de.api.model.*;
 import blockchains.iaas.uni.stuttgart.de.api.utils.SmartContractPathParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.reactivex.Observable;
-import io.reactivex.Scheduler;
-import io.reactivex.observers.DisposableObserver;
-import io.reactivex.schedulers.Schedulers;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.ClientProtocolException;
@@ -26,10 +23,7 @@ import javax.naming.OperationNotSupportedException;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -44,7 +38,6 @@ public class AptosAdapter implements BlockchainAdapter {
     private AptosClient aptosClient;
     private static final Logger logger = LoggerFactory.getLogger(AptosAdapter.class.getName());
 
-    private int lastBlockScanEnd = 0;
 
     public AptosAdapter(String nodeUrl, String keyFile) {
         this.nodeUrl = nodeUrl;
@@ -153,7 +146,11 @@ public class AptosAdapter implements BlockchainAdapter {
     @Override
     public CompletableFuture<QueryResult> queryEvents(String smartContractAddress, String eventIdentifier,
                                                       List<Parameter> outputParameters, String filter, TimeFrame timeFrame) throws BalException {
-        List<HashMap> invocationResult = this.aptosClient.queryEventInvocations(smartContractAddress, eventIdentifier, timeFrame.getFrom(), timeFrame.getTo());
+
+        String[] path = SmartContractPathParser.parse(smartContractAddress).getSmartContractPathSegments();
+        assert (path.length == 2);
+
+        List<HashMap> invocationResult = this.aptosClient.queryUserEventInvocations(path[0], path[1], eventIdentifier, timeFrame.getFrom(), timeFrame.getTo());
 
         QueryResult result = new QueryResult();
         List<Occurrence> occurrences = new ArrayList<>();
@@ -167,11 +164,11 @@ public class AptosAdapter implements BlockchainAdapter {
             o.setIsoTimestamp(zdt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
             List<Parameter> parameters = new ArrayList<>();
             try {
-                ArrayList e = ((ArrayList) i.get("events"));
-                if (e.size() == 0) continue;
-                HashMap<String, Object> events = (HashMap<String, Object>) ((ArrayList) i.get("events")).get(0);
+                // ArrayList e = ((ArrayList) i.get("events"));
+                // if (e.size() == 0) continue;
+                // HashMap<String, Object> events = (HashMap<String, Object>) ((ArrayList) i.get("events")).get(0);
 
-                HashMap<String, Object> data = (HashMap<String, Object>) events.get("data");
+                HashMap<String, Object> data = (HashMap<String, Object>) i.get("data");
                 for (Map.Entry<String, Object> set :
                         data.entrySet()) {
 

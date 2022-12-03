@@ -1,13 +1,9 @@
 package aptos;
 
-import blockchains.iaas.uni.stuttgart.de.plugin.AptosAdapter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -182,7 +178,7 @@ public class AptosClient {
 
     }
 
-    public List<HashMap> queryEventInvocations(String accountAddress, String eventIdentifier, String start, String end) {
+    public List<HashMap> queryEventInvocationsByAccount(String accountAddress, String eventIdentifier, String start, String end) {
         BigInteger endTime = new BigInteger(end);
         BigInteger startTime = new BigInteger(start);
 
@@ -224,5 +220,110 @@ public class AptosClient {
 
     }
 
+    public List<HashMap> queryUserEventInvocations(String accountAddress, String module, String eventIdentifier, String start, String end) {
+        BigInteger endTime = new BigInteger(end);
+        BigInteger startTime = new BigInteger(start);
+
+        ArrayList<HashMap> results = new ArrayList<>();
+        String url = this.nodeUrl + "/transactions";
+        int limit = 100;
+
+        // TODO: Create local cache of last timestamp and block number mapping
+        int start_count = 0;
+        boolean breakLoop = false;
+
+        String type = accountAddress + "::" + module + "::" + eventIdentifier;
+
+        try {
+            while (true) {
+                String endpoint = url + "?limit=" + limit + "&start=" + start_count;
+                logger.debug("Querying transactions from [{}] to [{}]", start, start + limit);
+                String result = sendGetRequest(endpoint);
+                ObjectMapper objectMapper = new ObjectMapper();
+
+                HashMap[] response_entity = objectMapper.readValue(result, HashMap[].class);
+
+                for (HashMap r : response_entity) {
+
+                    if (r.get("timestamp") != null) {
+                        BigInteger timeStamp = new BigInteger(r.get("timestamp").toString());
+                        if (startTime.compareTo(timeStamp) > 0) {
+                            continue;
+                        }
+
+                        if (endTime.compareTo(timeStamp) < 0) {
+                            breakLoop = true;
+                            break;
+                        }
+                    }
+
+                    if (!r.get("type").equals("user_transaction")) continue;
+
+                    ArrayList e = ((ArrayList) r.get("events"));
+                    if (e.size() == 0) continue;
+                    HashMap<String, Object> events = (HashMap<String, Object>) ((ArrayList) r.get("events")).get(0);
+
+                    HashMap<String, Object> data = (HashMap<String, Object>) events.get("data");
+                    if (events.get("type").equals(type)) {
+                        HashMap<String, Object> h = new HashMap<>();
+                        h.put("data", data);
+                        h.put("timestamp", r.get("timestamp"));
+                        results.add(h);
+                    }
+                }
+                start_count = start_count + limit;
+                if (breakLoop || response_entity.length < limit) {
+                    break;
+                }
+            }
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        return results;
+    }
+
+    public List<HashMap> queryUserEventInvocationsByBlock(String accountAddress, String module, String eventIdentifier, long start, long end) {
+
+        ArrayList<HashMap> results = new ArrayList<>();
+        String url = this.nodeUrl + "/transactions";
+        int limit = 100;
+        long count = start;
+
+        String type = accountAddress + "::" + module + "::" + eventIdentifier;
+
+        try {
+            while (true) {
+                String endpoint = url + "?limit=" + limit + "&start=" + count;
+                logger.debug("Querying transactions from [{}] to [{}]", count, count + limit);
+                String result = sendGetRequest(endpoint);
+                ObjectMapper objectMapper = new ObjectMapper();
+
+                HashMap[] response_entity = objectMapper.readValue(result, HashMap[].class);
+
+                for (HashMap r : response_entity) {
+
+                    if (!r.get("type").equals("user_transaction")) continue;
+
+
+                    ArrayList e = ((ArrayList) r.get("events"));
+                    if (e.size() == 0) continue;
+                    HashMap<String, Object> events = (HashMap<String, Object>) ((ArrayList) r.get("events")).get(0);
+
+                    HashMap<String, Object> data = (HashMap<String, Object>) events.get("data");
+                    if (events.get("type").equals(type)) {
+                        results.add(data);
+                    }
+                }
+                count = count + limit;
+
+                if (end < count || response_entity.length < limit) {
+                    break;
+                }
+            }
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        return results;
+    }
 
 }

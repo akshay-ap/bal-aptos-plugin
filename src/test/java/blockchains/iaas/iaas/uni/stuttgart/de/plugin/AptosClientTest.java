@@ -49,7 +49,7 @@ class AptosClientTest {
         String address = "0x050467afdd25629e640c2445c2eef7b6d909c741dadd1e73487c9acf32bc016e";
         String eventHandle = "0x1::account::CoinRegisterEvent";
         String fieldName = "withdraw_events";
-        List<HashMap> r = client.queryEventInvocations(address, eventHandle, "0", String.valueOf(System.currentTimeMillis() * 1000));
+        List<HashMap> r = client.queryEventInvocationsByAccount(address, eventHandle, "0", String.valueOf(System.currentTimeMillis() * 1000));
         assert r.size() != 0;
     }
 
@@ -61,7 +61,19 @@ class AptosClientTest {
         String address = "0x9f709239a4caf988527df46b7dca3797b740e408e48aa713e79a87fe85a53c4d";
         String eventHandle = "0x1::account::CoinRegisterEvent";
         String fieldName = "withdraw_events";
-        List<HashMap> r = client.queryEventInvocations(address, eventHandle, "0", String.valueOf(System.currentTimeMillis() * 1000));
+        List<HashMap> r = client.queryEventInvocationsByAccount(address, eventHandle, "0", String.valueOf(System.currentTimeMillis() * 1000));
+        assert r.size() != 0;
+    }
+
+    @Test
+    void testQueryInvocations() {
+        AptosClient client = new AptosClient(nodeUrl, faucetUrl);
+
+        Event e = new Event();
+        String address = "0x9f709239a4caf988527df46b7dca3797b740e408e48aa713e79a87fe85a53c4d";
+        String moduleName = "message";
+        String eventName = "MessageChangeEvent";
+        List<HashMap> r = client.queryUserEventInvocations(address, moduleName, eventName, "1669992606841597", String.valueOf(System.currentTimeMillis() * 100000));
         assert r.size() != 0;
     }
 
