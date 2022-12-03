@@ -8,6 +8,9 @@ import blockchains.iaas.uni.stuttgart.de.api.model.*;
 import blockchains.iaas.uni.stuttgart.de.api.utils.SmartContractPathParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.reactivex.Observable;
+import io.reactivex.Scheduler;
+import io.reactivex.observers.DisposableObserver;
+import io.reactivex.schedulers.Schedulers;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.ClientProtocolException;
@@ -26,12 +29,14 @@ import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeUnit;
 
 public class AptosAdapter implements BlockchainAdapter {
 
@@ -125,26 +130,40 @@ public class AptosAdapter implements BlockchainAdapter {
     @Override
     public Observable<Occurrence> subscribeToEvent(String smartContractAddress, String eventIdentifier,
                                                    List<Parameter> outputParameters, double degreeOfConfidence, String filter) throws BalException {
-        Observable<Occurrence> o = Observable.create(emitter -> {
-            while (!emitter.isDisposed()) {
-                Occurrence occurrence = new Occurrence();
-                ZonedDateTime zdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(System.currentTimeMillis()),
-                        ZoneId.systemDefault());
+//        Observable<Occurrence> o = Observable.create(emitter -> {
+//            while (!emitter.isDisposed()) {
+//                Occurrence occurrence = new Occurrence();
+//                ZonedDateTime zdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(System.currentTimeMillis()),
+//                        ZoneId.systemDefault());
+//
+//                occurrence.setIsoTimestamp(zdt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+//
+//                List<Parameter> parameters = new ArrayList<>();
+//                Parameter p = new Parameter();
+//                p.setName("Dummy");
+//                p.setValue("DummyValue");
+//                p.setType("DummyType");
+//                parameters.add(p);
+//                occurrence.setParameters(parameters);
+//                emitter.onNext(occurrence);
+//            }
+//        });
+        return Observable.interval(1, 1, TimeUnit.SECONDS).map((t) -> {
+            Occurrence occurrence = new Occurrence();
+            ZonedDateTime zdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(System.currentTimeMillis()),
+                    ZoneId.systemDefault());
 
-                occurrence.setIsoTimestamp(zdt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+            occurrence.setIsoTimestamp(zdt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
 
-                List<Parameter> parameters = new ArrayList<>();
-                Parameter p = new Parameter();
-                p.setName("Dummy");
-                p.setValue("DummyValue");
-                p.setType("DummyType");
-                parameters.add(p);
-                occurrence.setParameters(parameters);
-                emitter.onNext(occurrence);
-
-            }
+            List<Parameter> parameters = new ArrayList<>();
+            Parameter p = new Parameter();
+            p.setName("Dummy");
+            p.setValue("DummyValue");
+            p.setType("DummyType");
+            parameters.add(p);
+            occurrence.setParameters(parameters);
+            return occurrence;
         });
-        return o;
     }
 
     @Override
