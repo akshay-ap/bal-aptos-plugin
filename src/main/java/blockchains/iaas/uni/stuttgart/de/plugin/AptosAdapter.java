@@ -44,6 +44,8 @@ public class AptosAdapter implements BlockchainAdapter {
     private AptosClient aptosClient;
     private static final Logger logger = LoggerFactory.getLogger(AptosAdapter.class.getName());
 
+    private int lastBlockScanEnd = 0;
+
     public AptosAdapter(String nodeUrl, String keyFile) {
         this.nodeUrl = nodeUrl;
         this.aptosClient = new AptosClient(nodeUrl, keyFile);
@@ -130,25 +132,7 @@ public class AptosAdapter implements BlockchainAdapter {
     @Override
     public Observable<Occurrence> subscribeToEvent(String smartContractAddress, String eventIdentifier,
                                                    List<Parameter> outputParameters, double degreeOfConfidence, String filter) throws BalException {
-//        Observable<Occurrence> o = Observable.create(emitter -> {
-//            while (!emitter.isDisposed()) {
-//                Occurrence occurrence = new Occurrence();
-//                ZonedDateTime zdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(System.currentTimeMillis()),
-//                        ZoneId.systemDefault());
-//
-//                occurrence.setIsoTimestamp(zdt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-//
-//                List<Parameter> parameters = new ArrayList<>();
-//                Parameter p = new Parameter();
-//                p.setName("Dummy");
-//                p.setValue("DummyValue");
-//                p.setType("DummyType");
-//                parameters.add(p);
-//                occurrence.setParameters(parameters);
-//                emitter.onNext(occurrence);
-//            }
-//        });
-        return Observable.interval(1, 1, TimeUnit.SECONDS).map((t) -> {
+        return Observable.interval(0, 10, TimeUnit.SECONDS).map((t) -> {
             Occurrence occurrence = new Occurrence();
             ZonedDateTime zdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(System.currentTimeMillis()),
                     ZoneId.systemDefault());
@@ -182,20 +166,27 @@ public class AptosAdapter implements BlockchainAdapter {
             Occurrence o = new Occurrence();
             o.setIsoTimestamp(zdt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
             List<Parameter> parameters = new ArrayList<>();
-            HashMap<String, Object> events = (HashMap<String, Object>) ((ArrayList) i.get("events")).get(0);
+            try {
+                ArrayList e = ((ArrayList) i.get("events"));
+                if (e.size() == 0) continue;
+                HashMap<String, Object> events = (HashMap<String, Object>) ((ArrayList) i.get("events")).get(0);
 
-            HashMap<String, Object> data = (HashMap<String, Object>) events.get("data");
-            for (Map.Entry<String, Object> set :
-                    data.entrySet()) {
+                HashMap<String, Object> data = (HashMap<String, Object>) events.get("data");
+                for (Map.Entry<String, Object> set :
+                        data.entrySet()) {
 
-                // Printing all elements of a Map
-                System.out.println(set.getKey() + " = "
-                        + set.getValue());
-                Parameter p = new Parameter(set.getKey(), "string", set.getValue().toString());
-                parameters.add(p);
+                    // Printing all elements of a Map
+                    System.out.println(set.getKey() + " = "
+                            + set.getValue());
+                    Parameter p = new Parameter(set.getKey(), "string", set.getValue().toString());
+                    parameters.add(p);
+                }
+                o.setParameters(parameters);
+                occurrences.add(o);
+            } catch (IndexOutOfBoundsException e) {
+                logger.error("Skipping events n tx: " + i.get("hash"), e);
             }
-            o.setParameters(parameters);
-            occurrences.add(o);
+
 
         }
 

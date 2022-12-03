@@ -59,20 +59,23 @@ class AptosAdapterTest {
         aptosAdapter.subscribeToEvent("", null, null, 1, "").subscribe(o -> {
             System.out.println(o.getIsoTimestamp());
         });
-//        Thread t = new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//
-//            }
-//        });
-//        t.start();
-       // Thread.sleep(1000000);
 
     }
 
     @Test
     void queryEvents() {
         String address = "0x050467afdd25629e640c2445c2eef7b6d909c741dadd1e73487c9acf32bc016e";
+        String eventHandle = "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>";
+        List<Parameter> outputParameters = new ArrayList<>();
+        TimeFrame timeFrame = new TimeFrame("0", String.valueOf(System.currentTimeMillis() * 1000));
+        String filter = "";
+        CompletableFuture<QueryResult> result = aptosAdapter.queryEvents(address, eventHandle, outputParameters, "", timeFrame);
+        assert result.isDone();
+    }
+
+    @Test
+    void queryEvents2() {
+        String address = "0x9f709239a4caf988527df46b7dca3797b740e408e48aa713e79a87fe85a53c4d";
         String eventHandle = "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>";
         List<Parameter> outputParameters = new ArrayList<>();
         TimeFrame timeFrame = new TimeFrame("0", String.valueOf(System.currentTimeMillis() * 1000));

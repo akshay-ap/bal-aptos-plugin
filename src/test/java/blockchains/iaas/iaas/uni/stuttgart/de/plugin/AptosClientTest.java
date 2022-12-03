@@ -53,4 +53,16 @@ class AptosClientTest {
         assert r.size() != 0;
     }
 
+    @Test
+    void testEventQuery2() {
+        AptosClient client = new AptosClient(nodeUrl, faucetUrl);
+
+        Event e = new Event();
+        String address = "0x9f709239a4caf988527df46b7dca3797b740e408e48aa713e79a87fe85a53c4d";
+        String eventHandle = "0x1::account::CoinRegisterEvent";
+        String fieldName = "withdraw_events";
+        List<HashMap> r = client.queryEventInvocations(address, eventHandle, "0", String.valueOf(System.currentTimeMillis() * 1000));
+        assert r.size() != 0;
+    }
+
 }
