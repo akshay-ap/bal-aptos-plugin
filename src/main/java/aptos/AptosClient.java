@@ -11,6 +11,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.bouncycastle.asn1.eac.ECDSAPublicKey;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -125,7 +126,7 @@ public class AptosClient {
 
     public String signMessage(String data, String privateKey) {
         privateKey = privateKey.substring(2);
-        Security.addProvider(new BouncyCastleProvider());
+            Security.addProvider(new BouncyCastleProvider());
 
         byte[] privateKeyEncoded = Hex.decode(privateKey);
 

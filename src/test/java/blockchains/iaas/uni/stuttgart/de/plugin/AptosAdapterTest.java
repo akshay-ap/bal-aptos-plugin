@@ -50,7 +50,7 @@ class AptosAdapterTest {
         List<String> signers = new ArrayList<>();
         long minimumNumberOfSigners = 0;
         Transaction result =
-                aptosAdapter.invokeSmartContract(functionId, methodName, typeArguments, parameters, outputParameters, 0, 0L, signers, minimumNumberOfSigners).get();
+                aptosAdapter.invokeSmartContract(functionId, methodName, typeArguments, parameters, outputParameters, 0, 0L, "", "", signers, minimumNumberOfSigners).get();
         assert result.getState() == TransactionState.CONFIRMED;
     }
 
@@ -78,7 +78,9 @@ class AptosAdapterTest {
         List<Parameter> outputParameters = new ArrayList<>();
         TimeFrame timeFrame = new TimeFrame("0", String.valueOf(System.currentTimeMillis() * 1000));
         String filter = "";
-        CompletableFuture<QueryResult> result = aptosAdapter.queryEvents(address, eventHandle, outputParameters, "", timeFrame);
+        List<String> typeArguments = new ArrayList<>();
+
+        CompletableFuture<QueryResult> result = aptosAdapter.queryEvents(address, eventHandle, typeArguments, outputParameters, "", timeFrame);
         assert result.isDone();
         assert result.get().getOccurrences().size() != 0;
     }
@@ -90,7 +92,9 @@ class AptosAdapterTest {
         List<Parameter> outputParameters = new ArrayList<>();
         TimeFrame timeFrame = new TimeFrame("0", String.valueOf(System.currentTimeMillis() * 1000));
         String filter = "";
-        CompletableFuture<QueryResult> result = aptosAdapter.queryEvents(address, eventHandle, outputParameters, "", timeFrame);
+        List<String> typeArguments = new ArrayList<>();
+
+        CompletableFuture<QueryResult> result = aptosAdapter.queryEvents(address, eventHandle, typeArguments, outputParameters, "", timeFrame);
         assert result.isDone();
     }
 
@@ -101,7 +105,9 @@ class AptosAdapterTest {
         List<Parameter> outputParameters = new ArrayList<>();
         TimeFrame timeFrame = new TimeFrame("0", String.valueOf(System.currentTimeMillis() * 1000));
         String filter = "";
-        CompletableFuture<QueryResult> result = aptosAdapter.queryEvents(address, eventHandle, outputParameters, "", timeFrame);
+        List<String> typeArguments = new ArrayList<>();
+
+        CompletableFuture<QueryResult> result = aptosAdapter.queryEvents(address, eventHandle, typeArguments, outputParameters, "", timeFrame);
         assert result.isDone();
     }
 

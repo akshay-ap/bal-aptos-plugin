@@ -7,7 +7,6 @@ import blockchains.iaas.uni.stuttgart.de.api.interfaces.BlockchainAdapter;
 import blockchains.iaas.uni.stuttgart.de.api.model.*;
 import blockchains.iaas.uni.stuttgart.de.api.utils.SmartContractPathParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.reactivex.Observable;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.ClientProtocolException;
@@ -22,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import javax.naming.OperationNotSupportedException;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -31,6 +31,8 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
+
+import io.reactivex.Observable;
 
 public class AptosAdapter implements BlockchainAdapter {
 
@@ -85,7 +87,9 @@ public class AptosAdapter implements BlockchainAdapter {
                                                               List<Parameter> inputs,
                                                               List<Parameter> outputs,
                                                               double requiredConfidence,
-                                                              long timeout,
+                                                              long timeoutMillis,
+                                                              String signature,
+                                                              String signer,
                                                               List<String> signers,
                                                               long minimumNumberOfSignatures) throws BalException {
         String[] path = SmartContractPathParser.parse(smartContractPath).getSmartContractPathSegments();
@@ -138,11 +142,10 @@ public class AptosAdapter implements BlockchainAdapter {
             List<Occurrence> occurrences = transformInvocationResultToOccurrences(result);
             return occurrences;
         }).flatMapIterable(x -> x);
-
     }
 
     @Override
-    public CompletableFuture<QueryResult> queryEvents(String smartContractAddress, String eventIdentifier,
+    public CompletableFuture<QueryResult> queryEvents(String smartContractAddress, String eventIdentifier, List<String> typeArguments,
                                                       List<Parameter> outputParameters, String filter, TimeFrame timeFrame) throws BalException {
 
         String[] path = SmartContractPathParser.parse(smartContractAddress).getSmartContractPathSegments();
@@ -201,24 +204,22 @@ public class AptosAdapter implements BlockchainAdapter {
     }
 
     @Override
-    public boolean signInvocation(String s, String s1) {
+    public CompletableFuture<Transaction> tryReplaceInvocation(String correlationId, String smartContractPath,
+                                                               String functionIdentifier,
+                                                               List<String> typeArguments,
+                                                               List<Parameter> inputs,
+                                                               List<Parameter> outputs,
+                                                               double requiredConfidence,
+                                                               String signature,
+                                                               String signer,
+                                                               List<String> signers,
+                                                               long minimumNumberOfSignatures) {
+        return null;
+    }
 
+    @Override
+    public boolean tryCancelInvocation(String s) {
         return false;
-    }
-
-    @Override
-    public List<Transaction> getPendingInvocations() {
-        return null;
-    }
-
-    @Override
-    public CompletableFuture<Transaction> tryReplaceInvocation(String s, String s1, String s2, List<String> list, List<Parameter> list1, List<Parameter> list2, double v, List<String> list3, long l) {
-        return null;
-    }
-
-    @Override
-    public void tryCancelInvocation(String s) {
-
     }
 
     private static BalException mapAptosException(Throwable e) {
