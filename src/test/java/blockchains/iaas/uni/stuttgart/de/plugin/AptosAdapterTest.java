@@ -1,6 +1,8 @@
 package blockchains.iaas.uni.stuttgart.de.plugin;
 
 import blockchains.iaas.uni.stuttgart.de.api.model.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -45,6 +47,67 @@ class AptosAdapterTest {
         //        outputParameter.setType("string");
         //        outputParameter.setValue("test message");
         //        outputParameters.add(outputParameter);
+
+        List<String> typeArguments = new ArrayList<>();
+        List<String> signers = new ArrayList<>();
+        long minimumNumberOfSigners = 0;
+        Transaction result =
+                aptosAdapter.invokeSmartContract(functionId, methodName, typeArguments, parameters, outputParameters, 0, 0L, "", "", signers, minimumNumberOfSigners).get();
+        assert result.getState() == TransactionState.CONFIRMED;
+    }
+
+    @Test
+    void testInvokeSmartContract2() throws ExecutionException, InterruptedException, JsonProcessingException {
+
+        String stringType = "{\"type\": \"string\"}";
+        String integerType = "{\"type\": \"integer\", \"minimum\": \"0\", \"maximum\":\"18446744073709551615\"}";
+        String booleanArrayType = "{\"type\": \"array\", \"items\": \"boolean\"}";
+
+
+        String functionId = "0x3/token";
+        String methodName = "create_collection_script";
+
+        List<Parameter> parameters = new ArrayList<>();
+
+        Parameter name = new Parameter();
+        name.setName("name");
+        name.setType(stringType);
+        name.setValue("test message");
+        parameters.add(name);
+
+        Parameter description = new Parameter();
+        description.setName("description");
+        description.setType(stringType);
+        description.setValue("test message");
+        parameters.add(description);
+
+        Parameter uri = new Parameter();
+        uri.setName("uri");
+        uri.setType(stringType);
+        uri.setValue("test message");
+        parameters.add(uri);
+
+        Parameter supply = new Parameter();
+        supply.setName("supply");
+        supply.setType(integerType);
+        supply.setValue("123");
+        parameters.add(supply);
+
+
+        Parameter mutateSettings = new Parameter();
+        mutateSettings.setName("mutate_setting");
+        mutateSettings.setType(booleanArrayType);
+
+        List<Boolean> list = new ArrayList<Boolean>();
+        list.add(false);
+        list.add(false);
+        list.add(false);
+        final ObjectMapper mapper = new ObjectMapper();
+        mutateSettings.setValue(mapper.writeValueAsString(list));
+
+        parameters.add(mutateSettings);
+
+        List<Parameter> outputParameters = new ArrayList<>();
 
         List<String> typeArguments = new ArrayList<>();
         List<String> signers = new ArrayList<>();

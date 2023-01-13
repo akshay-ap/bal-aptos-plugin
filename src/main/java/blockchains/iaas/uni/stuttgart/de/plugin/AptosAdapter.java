@@ -5,6 +5,7 @@ import aptos.AptosClient;
 import blockchains.iaas.uni.stuttgart.de.api.exceptions.*;
 import blockchains.iaas.uni.stuttgart.de.api.interfaces.BlockchainAdapter;
 import blockchains.iaas.uni.stuttgart.de.api.model.*;
+import blockchains.iaas.uni.stuttgart.de.api.utils.BooleanExpressionEvaluator;
 import blockchains.iaas.uni.stuttgart.de.api.utils.SmartContractPathParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpEntity;
@@ -21,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import javax.naming.OperationNotSupportedException;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -95,16 +95,17 @@ public class AptosAdapter implements BlockchainAdapter {
         String[] path = SmartContractPathParser.parse(smartContractPath).getSmartContractPathSegments();
         assert (path.length == 2);
 
-        ArrayList<String> arguments = new ArrayList<>();
+        Object[] arguments = new Object[inputs.size()];
 
-        for (Parameter a : inputs) {
-            arguments.add(a.getValue());
+        for (int i = 0; i < inputs.size(); i++) {
+            Object value = AptosTypeMapper.getValue(inputs.get(i));
+            arguments[i] = (value);
         }
 
         return CompletableFuture.supplyAsync(() -> {
             try {
                 String seq = aptosClient.getSequenceNumber();
-                String txHash = aptosClient.sendTransaction(path[0], path[1], functionIdentifier, typeArguments.toArray(new String[0]), arguments.toArray(new String[0]), seq);
+                String txHash = aptosClient.sendTransaction(path[0], path[1], functionIdentifier, typeArguments.toArray(new String[0]), arguments, seq);
                 logger.info("Transaction hash: " + txHash);
                 return CompletableFuture.completedFuture(txHash);
             } catch (Exception e) {
@@ -139,7 +140,7 @@ public class AptosAdapter implements BlockchainAdapter {
                     Long.parseLong(start), end);
             aptosClient.setEventSubscriptionMappingValue(key, String.valueOf(end));
 
-            List<Occurrence> occurrences = transformInvocationResultToOccurrences(result);
+            List<Occurrence> occurrences = transformInvocationResultToOccurrences(result, filter);
             return occurrences;
         }).flatMapIterable(x -> x);
     }
@@ -154,7 +155,7 @@ public class AptosAdapter implements BlockchainAdapter {
         List<HashMap> invocationResult = this.aptosClient.queryUserEventInvocations(path[0], path[1], eventIdentifier, timeFrame.getFrom(), timeFrame.getTo());
 
         QueryResult result = new QueryResult();
-        List<Occurrence> occurrences = transformInvocationResultToOccurrences(invocationResult);
+        List<Occurrence> occurrences = transformInvocationResultToOccurrences(invocationResult, filter);
 
         result.setOccurrences(occurrences);
         return CompletableFuture.completedFuture(result);
@@ -222,8 +223,27 @@ public class AptosAdapter implements BlockchainAdapter {
         return false;
     }
 
+    @Override
+    public boolean canHandleDelegatedSubscription() {
+        return false;
+    }
+
+    @Override
+    public boolean delegatedSubscribe(String functionIdentifier, String eventIdentifier, List<Parameter> outputParameters, double degreeOfConfidence, String filter, String callbackUrl, String correlationId) {
+        throw new NotSupportedException();
+    }
+
+    @Override
+    public boolean delegatedUnsubscribe(String smartContractPath, String functionIdentifier, String eventIdentifier, List<String> typeArguments, List<Parameter> parameters, String correlationId) {
+        throw new NotSupportedException();
+    }
+
     private static BalException mapAptosException(Throwable e) {
         BalException result;
+
+        /*
+        https://fullnode.devnet.aptoslabs.com/v1/spec#/schemas/AptosError
+        * */
 
         if (e instanceof BalException)
             result = (BalException) e;
@@ -243,7 +263,7 @@ public class AptosAdapter implements BlockchainAdapter {
         return result;
     }
 
-    private List<Occurrence> transformInvocationResultToOccurrences(List<HashMap> invocationResult) {
+    private List<Occurrence> transformInvocationResultToOccurrences(List<HashMap> invocationResult, String filter) {
         List<Occurrence> occurrences = new ArrayList<>();
         for (HashMap i : invocationResult) {
             Long timeinMillis = Long.valueOf((String) i.get("timestamp"));
@@ -260,10 +280,15 @@ public class AptosAdapter implements BlockchainAdapter {
                     Parameter p = new Parameter(set.getKey(), "string", set.getValue().toString());
                     parameters.add(p);
                 }
-                o.setParameters(parameters);
-                occurrences.add(o);
+                if (parameters.size() > 0 && BooleanExpressionEvaluator.evaluate(filter, parameters)) {
+                    o.setParameters(parameters);
+                    occurrences.add(o);
+                }
+
             } catch (IndexOutOfBoundsException e) {
                 logger.error("Skipping events n tx: " + i.get("hash"), e);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
         }
         return occurrences;

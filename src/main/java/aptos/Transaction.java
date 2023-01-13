@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+
 public class Transaction {
     String endpoint;
     String sequenceNumber;
@@ -12,7 +15,8 @@ public class Transaction {
     String gasPrice;
     String expirationTimeInSeconds;
     String address, moduleName, functionName;
-    String[] typeArguments, functionArguments;
+    String[] typeArguments;
+    Object[] functionArguments;
     TransactionType transactionType;
     Signature signature;
     String sender;
@@ -193,10 +197,11 @@ public class Transaction {
         String gasPrice = "1000";
         String expirationTimeInSeconds = "32425224034";
         String address, moduleName, functionName;
-        String[] typeArguments, functionArguments;
+        String[] typeArguments;
+        Object[] functionArguments;
         TransactionType transactionType;
 
-        public TransactionBuilder(String sender, String address, String moduleName, String functionName, String[] typeArguments, String[] functionArguments, String endpoint, String sequenceNumber) {
+        public TransactionBuilder(String sender, String address, String moduleName, String functionName, String[] typeArguments, Object[] functionArguments, String endpoint, String sequenceNumber) {
             this.endpoint = endpoint;
             this.address = address;
             this.moduleName = moduleName;

@@ -11,15 +11,12 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.bouncycastle.asn1.eac.ECDSAPublicKey;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-// import java.util.HexFormat;
-
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.Security;
@@ -51,7 +48,7 @@ public class AptosClient {
         this.account = account;
     }
 
-    public String sendTransaction(String address, String moduleName, String functionName, String[] typeArguments, String[] functionArguments, String sequenceNumber) throws Exception {
+    public String sendTransaction(String address, String moduleName, String functionName, String[] typeArguments, Object[] functionArguments, String sequenceNumber) throws Exception {
 
         String endpoint = this.nodeUrl + "/transactions";
         String maxGasAmount = "10000";

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
+import javax.json.JsonArray;
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
@@ -34,13 +35,43 @@ class AptosClientTest {
         client.setAccount(account);
 
         String address = accountAddress;
-        String[] functionArgs = new String[]{"12345"};
+        Object[] functionArgs = new Object[]{"test"};
+
         String[] typeArgs = new String[]{};
         String seq = client.getSequenceNumber();
         String txHash = client.sendTransaction(address, "message", "set_message", typeArgs, functionArgs, seq);
 
         assertNotNull(txHash);
     }
+
+    @Test
+    void testSendTransactionMintNFT() throws Exception {
+        String keyFile = this.getClass().getClassLoader().getResource("local_testnet.json").getFile();
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, String> example = objectMapper.readValue(new File(keyFile), Map.class);
+        String publicKey = example.get("public_key");
+        String privateKey = example.get("private_key");
+        String accountAddress = example.get("account");
+        Account account = new Account(accountAddress, publicKey, privateKey);
+
+        AptosClient client = new AptosClient(nodeUrl, faucetUrl);
+
+        client.setAccount(account);
+
+        String address = accountAddress;
+
+        boolean[] mutateSettings = new boolean[]{false, false, false};
+
+        Object[] functionArgs = new Object[]{"1", "1", "1", "123", mutateSettings};
+
+        String[] typeArgs = new String[]{};
+        String seq = client.getSequenceNumber();
+        String txHash = client.sendTransaction("0x3", "token", "create_collection_script", typeArgs, functionArgs, seq);
+
+        assertNotNull(txHash);
+    }
+
 
     @Test
     void testEventQuery() {
