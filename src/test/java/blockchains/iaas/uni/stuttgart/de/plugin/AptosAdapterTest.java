@@ -68,23 +68,23 @@ class AptosAdapterTest {
         String methodName = "create_collection_script";
 
         List<Parameter> parameters = new ArrayList<>();
-
+        String time = String.valueOf(+System.currentTimeMillis());
         Parameter name = new Parameter();
         name.setName("name");
         name.setType(stringType);
-        name.setValue("test message");
+        name.setValue("test message: " + time);
         parameters.add(name);
 
         Parameter description = new Parameter();
         description.setName("description");
         description.setType(stringType);
-        description.setValue("test message");
+        description.setValue("test message" + time);
         parameters.add(description);
 
         Parameter uri = new Parameter();
         uri.setName("uri");
         uri.setType(stringType);
-        uri.setValue("test message");
+        uri.setValue("test message" + time);
         parameters.add(uri);
 
         Parameter supply = new Parameter();
@@ -97,14 +97,7 @@ class AptosAdapterTest {
         Parameter mutateSettings = new Parameter();
         mutateSettings.setName("mutate_setting");
         mutateSettings.setType(booleanArrayType);
-
-        List<Boolean> list = new ArrayList<Boolean>();
-        list.add(false);
-        list.add(false);
-        list.add(false);
-        final ObjectMapper mapper = new ObjectMapper();
-        mutateSettings.setValue(mapper.writeValueAsString(list));
-
+        mutateSettings.setValue("[false, false, false]");
         parameters.add(mutateSettings);
 
         List<Parameter> outputParameters = new ArrayList<>();

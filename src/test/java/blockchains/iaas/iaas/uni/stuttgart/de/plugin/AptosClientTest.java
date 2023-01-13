@@ -7,7 +7,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
-import javax.json.JsonArray;
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
@@ -34,12 +33,11 @@ class AptosClientTest {
 
         client.setAccount(account);
 
-        String address = accountAddress;
         Object[] functionArgs = new Object[]{"test"};
 
         String[] typeArgs = new String[]{};
         String seq = client.getSequenceNumber();
-        String txHash = client.sendTransaction(address, "message", "set_message", typeArgs, functionArgs, seq);
+        String txHash = client.sendTransaction(accountAddress, "message", "set_message", typeArgs, functionArgs, seq);
 
         assertNotNull(txHash);
     }

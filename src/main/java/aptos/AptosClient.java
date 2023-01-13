@@ -62,6 +62,9 @@ public class AptosClient {
                 .build();
 
         String bodyContent = t.getUnsignedTransactionAsJsonString();
+
+        logger.info("Aptos unsigned transaction body: [{}]", bodyContent);
+
         String encodedData = this.encodeData(bodyContent);
 
         String signature = this.signMessage(encodedData, account.getPrivateKey());
