@@ -1,5 +1,6 @@
 package aptos;
 
+import aptos.models.Exceptions.*;
 import aptos.models.LedgerInfo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -17,6 +18,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.Security;
@@ -33,6 +35,7 @@ public class AptosClient {
     private Account account;
 
     private HashMap<String, String> eventSubscriptionMapping = new HashMap();
+
     private static final Logger logger = LoggerFactory.getLogger(AptosClient.class.getName());
 
     public AptosClient(String nodeUrl, String faucetUrl) {
@@ -114,7 +117,9 @@ public class AptosClient {
             logger.debug("POST API [{}] response code [{}]", url, response.getStatusLine().getStatusCode());
             result = EntityUtils.toString(response.getEntity());
             if (response.getStatusLine().getStatusCode() != 202) {
-                throw new Exception(result);
+                ObjectMapper objectMapper = new ObjectMapper();
+                ErrorResponse errorResponse = objectMapper.readValue(result, ErrorResponse.class);
+                throw mapException(errorResponse);
             }
             return result;
 
@@ -126,7 +131,7 @@ public class AptosClient {
 
     public String signMessage(String data, String privateKey) {
         privateKey = privateKey.substring(2);
-            Security.addProvider(new BouncyCastleProvider());
+        Security.addProvider(new BouncyCastleProvider());
 
         byte[] privateKeyEncoded = Hex.decode(privateKey);
 
@@ -157,11 +162,15 @@ public class AptosClient {
                     .addHeader("Content-Type", "application/json")
                     .build();
             Response response = client.newCall(request).execute();
+            String result = response.body().string();
+
             if (response.code() != 200) {
-                throw new Exception(response.body().string());
+                assert response.body() != null;
+                ObjectMapper objectMapper = new ObjectMapper();
+                ErrorResponse errorResponse = objectMapper.readValue(result, ErrorResponse.class);
+                throw mapException(errorResponse);
             }
-            String encodedData = response.body().string();
-            return encodedData.replace("\"", "");
+            return result.replace("\"", "");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -355,5 +364,53 @@ public class AptosClient {
             throw new RuntimeException(e);
         }
         return ledgerInfo.ledgerVersion;
+    }
+
+    private AptosClientException mapException(ErrorResponse errorResponse) {
+        switch (errorResponse.errorCode) {
+            case ACCOUNT_NOT_FOUND:
+                return new AccountNotFoundException(errorResponse);
+            case RESOURCE_NOT_FOUND:
+                return new ResourceNotFoundException(errorResponse);
+            case MODULE_NOT_FOUND:
+                return new ModuleNotFoundException(errorResponse);
+            case STRUCT_FIELD_NOT_FOUND:
+                return new StructFieldNotFoundException(errorResponse);
+            case VERSION_NOT_FOUND:
+                return new VersionNotFoundException(errorResponse);
+            case TRANSACTION_NOT_FOUND:
+                return new AptosTransactionNotFoundException(errorResponse);
+            case TABLE_ITEM_NOT_FOUND:
+                return new AptosTableItemNotFoundException(errorResponse);
+            case BLOCK_NOT_FOUND:
+                return new AptosBlockPrunedException(errorResponse);
+            case VERSION_PRUNED:
+                return new AptosVersionPrunedException(errorResponse);
+            case BLOCK_PRUNED:
+                return new AptosBlockPrunedException(errorResponse);
+            case INVALID_INPUT:
+                return new InvalidInputException(errorResponse);
+            case INVALID_TRANSACTION_UPDATE:
+                return new InvalidTransactionUpdateException(errorResponse);
+            case SEQUENCE_NUMBER_TOO_OLD:
+                return new AptosSequenceNumberTooOldException(errorResponse);
+            case VM_ERROR:
+                return new AptosVMErrorException(errorResponse);
+            case HEALTH_CHECK_FAILED:
+                return new AptosHealthCheckFailedException(errorResponse);
+            case MEMPOOL_IS_FULL:
+                return new AptosMempoolIsFullException(errorResponse);
+            case INTERNAL_ERROR:
+                return new AptosNodeInternalError(errorResponse);
+            case WEB_FRAMEWORK_ERROR:
+                return new AptosWebFrameworkError(errorResponse);
+            case BCS_NOT_SUPPORTED:
+                return new AptosBCSNotSupportedException(errorResponse);
+            case API_DISABLED:
+                return new AptosApiDisabledException(errorResponse);
+            default:
+                return new UnknownException(errorResponse);
+        }
+
     }
 }

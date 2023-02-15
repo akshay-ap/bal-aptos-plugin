@@ -15,7 +15,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AptosClientTest {
-    String nodeUrl = "http://localhost:8080/v1";
+    String nodeUrl = "http://localhost:9002/v1";
     String faucetUrl = "http://localhost:8000";
 
     @Test

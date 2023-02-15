@@ -2,17 +2,21 @@ package blockchains.iaas.uni.stuttgart.de.plugin;
 
 import aptos.Account;
 import aptos.AptosClient;
+import aptos.models.Exceptions.*;
 import blockchains.iaas.uni.stuttgart.de.api.exceptions.*;
+import blockchains.iaas.uni.stuttgart.de.api.exceptions.UnknownException;
 import blockchains.iaas.uni.stuttgart.de.api.interfaces.BlockchainAdapter;
 import blockchains.iaas.uni.stuttgart.de.api.model.*;
 import blockchains.iaas.uni.stuttgart.de.api.utils.BooleanExpressionEvaluator;
 import blockchains.iaas.uni.stuttgart.de.api.utils.SmartContractPathParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
@@ -40,6 +44,16 @@ public class AptosAdapter implements BlockchainAdapter {
     private AptosClient aptosClient;
     private static final Logger logger = LoggerFactory.getLogger(AptosAdapter.class.getName());
 
+//    private class SubmittedTransactionInfo {
+//        private String transactionHash;
+//        private String sequenceNumber;
+//
+//        private SubmittedTransactionInfo(String transactionHash) {
+//            this.transactionHash = transactionHash;
+//        }
+//    }
+//
+//    private static final Map<String, SubmittedTransactionInfo> submittedTransactionInfoMap = new HashMap<>();
 
     public AptosAdapter(String nodeUrl, String keyFile) {
         this.nodeUrl = nodeUrl;
@@ -91,6 +105,7 @@ public class AptosAdapter implements BlockchainAdapter {
                                                               String signature,
                                                               String signer,
                                                               List<String> signers,
+                                                              List<ImmutablePair<String, String>> signatures,
                                                               long minimumNumberOfSignatures) throws BalException {
         String[] path = SmartContractPathParser.parse(smartContractPath).getSmartContractPathSegments();
         assert (path.length == 2);
@@ -109,7 +124,7 @@ public class AptosAdapter implements BlockchainAdapter {
                 logger.info("Transaction hash: " + txHash);
                 return CompletableFuture.completedFuture(txHash);
             } catch (Exception e) {
-                throw new CompletionException(wrapAtposExceptions(e));
+                throw mapAptosException(e);
             }
         }).thenApply((txhash) -> {
             Transaction tx = new Transaction();
@@ -249,6 +264,17 @@ public class AptosAdapter implements BlockchainAdapter {
             result = (BalException) e;
         else if (e.getCause() instanceof BalException)
             result = (BalException) e.getCause();
+        else if (e instanceof InvalidInputException)
+            result = new ParameterException(e.getMessage());
+        else if (e instanceof ModuleNotFoundException)
+            result = new SmartContractNotFoundException(e.getMessage());
+        else if (e instanceof ResourceNotFoundException || (e instanceof AccountNotFoundException)
+                || (e instanceof StructFieldNotFoundException) || e instanceof InvalidTransactionUpdateException)
+            result = new InvalidTransactionException(e.getMessage());
+        else if (e instanceof AptosNodeInternalError)
+            result = new UnknownException();
+        else if (e.getCause() instanceof HttpHostConnectException)
+            result = new BlockchainNodeUnreachableException(e.getMessage());
         else if (e.getCause() instanceof IOException)
             result = new BlockchainNodeUnreachableException(e.getMessage());
         else if (e instanceof IllegalArgumentException || e instanceof OperationNotSupportedException)
